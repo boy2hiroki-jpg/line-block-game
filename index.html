@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>本格LINEアルカノイド</title>
+    <title>ネオン・アルカノイド</title>
     <style>
         body { 
             margin: 0; 
-            background: #111; 
+            background: #0a0a0f; 
             display: flex; 
             justify-content: center; 
             align-items: center; 
@@ -19,8 +19,9 @@
         canvas { 
             background: #000; 
             display: block; 
-            box-shadow: 0 0 20px rgba(0, 149, 221, 0.5); 
-            border: 2px solid #333;
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.4); 
+            border: 2px solid #00f3ff;
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -32,7 +33,6 @@
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        // ゲームのステータス
         let score = 0;
         let lives = 3;
 
@@ -44,21 +44,21 @@
         let ballRadius = 8;
         
         // パドルの設定
-        let paddleHeight = 12;
+        let paddleHeight = 10;
         let paddleWidth = 80;
         let paddleX = (canvas.width - paddleWidth) / 2;
 
-        // ブロックの設定（4行 × 6列）
+        // ブロックの設定
         let brickRowCount = 4;
         let brickColumnCount = 6;
         let brickWidth = 48;
         let brickHeight = 18;
         let brickPadding = 8;
-        let brickOffsetTop = 40;
+        let brickOffsetTop = 45;
         let brickOffsetLeft = 20;
 
-        // ブロックの色リスト（行ごと）
-        let brickColors = ["#FF4136", "#FF851B", "#2ECC40", "#0074D9"];
+        // ネオンカラーのグラデーション用リスト
+        let brickColors = ["#ff0055", "#ff5500", "#ffcc00", "#00ffcc"];
 
         let bricks = [];
         function initBricks() {
@@ -71,7 +71,7 @@
         }
         initBricks();
 
-        // タッチ操作（スマホ対応）＆ マウス操作対応
+        // 操作（タッチ＆マウス）
         canvas.addEventListener("touchmove", (e) => {
             let relativeX = e.touches[0].clientX - canvas.offsetLeft;
             movePaddle(relativeX);
@@ -82,131 +82,4 @@
         });
 
         function movePaddle(relativeX) {
-            if(relativeX > 0 && relativeX < canvas.width) {
-                paddleX = relativeX - paddleWidth / 2;
-                // 画面外に出ないように制限
-                if(paddleX < 0) paddleX = 0;
-                if(paddleX + paddleWidth > canvas.width) paddleX = canvas.width - paddleWidth;
-            }
-        }
-
-        // 当たり判定
-        function collisionDetection() {
-            for(let c=0; c<brickColumnCount; c++) {
-                for(let r=0; r<brickRowCount; r++) {
-                    let b = bricks[c][r];
-                    if(b.status == 1) {
-                        if(x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
-                            dy = -dy;
-                            b.status = 0;
-                            score += 10;
-                            
-                            // すべて壊したか判定
-                            if(score === brickRowCount * brickColumnCount * 10) {
-                                alert("CLEAR!!");
-                                document.location.reload();
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // スコアとライフの描画
-        function drawScoreAndLives() {
-            ctx.font = "14px sans-serif";
-            ctx.fillStyle = "#fff";
-            ctx.fillText("SCORE: " + score, 20, 25);
-            ctx.fillText("LIVES: " + lives, canvas.width - 80, 25);
-        }
-
-        function drawBall() {
-            ctx.beginPath();
-            ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-            ctx.fillStyle = "#00FFFF";
-            ctx.fill();
-            ctx.closePath();
-        }
-
-        function drawPaddle() {
-            ctx.beginPath();
-            ctx.rect(paddleX, canvas.height - paddleHeight - 15, paddleWidth, paddleHeight);
-            ctx.fillStyle = "#FFDC00";
-            ctx.fill();
-            ctx.closePath();
-        }
-
-        function drawBricks() {
-            for(let c=0; c<brickColumnCount; c++) {
-                for(let r=0; r<brickRowCount; r++) {
-                    if(bricks[c][r].status == 1) {
-                        let brickX = (c*(brickWidth+brickPadding))+brickOffsetLeft;
-                        let brickY = (r*(brickHeight+brickPadding))+brickOffsetTop;
-                        bricks[c][r].x = brickX;
-                        bricks[c][r].y = brickY;
-                        ctx.beginPath();
-                        ctx.rect(brickX, brickY, brickWidth, brickHeight);
-                        ctx.fillStyle = brickColors[r];
-                        ctx.fill();
-                        ctx.strokeStyle = "#000";
-                        ctx.stroke();
-                        ctx.closePath();
-                    }
-                }
-            }
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBricks();
-            drawBall();
-            drawPaddle();
-            drawScoreAndLives();
-            collisionDetection();
-
-            // 壁との反射
-            if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
-                dx = -dx;
-            }
-            if(y + dy < ballRadius) {
-                dy = -dy;
-            } else if(y + dy > canvas.height - ballRadius - 15) {
-                // パドルとの当たり判定（パドルのどこに当たったかで跳ね返り角度を変える）
-                if(x > paddleX && x < paddleX + paddleWidth) {
-                    let hitPoint = x - (paddleX + paddleWidth / 2);
-                    dx = hitPoint * 0.15; // 当たる位置によって横のスピードが変わる
-                    dy = -dy;
-                } else {
-                    // 底に落ちたらライフを減らす
-                    lives--;
-                    if(!lives) {
-                        alert("GAME OVER");
-                        document.location.reload();
-                    } else {
-                        x = canvas.width / 2;
-                        y = canvas.height - 40;
-                        dx = 3;
-                        dy = -3;
-                        paddleX = (canvas.width - paddleWidth) / 2;
-                    }
-                }
-            }
-
-            x += dx;
-            y += dy;
-            requestAnimationFrame(draw);
-        }
-
-        async function initializeLiff() {
-            try {
-                await liff.init({ liffId: "YOUR-LIFF-ID" });
-            } catch (error) {
-                console.log("LIFF Initialization failed", error);
-            }
-        }
-
-        initializeLiff();
-        draw();
-    </script>
-</body>
-</html>
+            if(relativeX > 0 && relativeX < canvas.
