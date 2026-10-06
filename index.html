@@ -57,7 +57,6 @@
         let brickOffsetTop = 45;
         let brickOffsetLeft = 20;
 
-        // ネオンカラーのグラデーション用リスト
         let brickColors = ["#ff0055", "#ff5500", "#ffcc00", "#00ffcc"];
 
         let bricks = [];
@@ -82,4 +81,142 @@
         });
 
         function movePaddle(relativeX) {
-            if(relativeX > 0 && relativeX < canvas.
+            if(relativeX > 0 && relativeX < canvas.width) {
+                paddleX = relativeX - paddleWidth / 2;
+                if(paddleX < 0) paddleX = 0;
+                if(paddleX + paddleWidth > canvas.width) paddleX = canvas.width - paddleWidth;
+            }
+        }
+
+        // 当たり判定
+        function collisionDetection() {
+            for(let c=0; c<brickColumnCount; c++) {
+                for(let r=0; r<brickRowCount; r++) {
+                    let b = bricks[c][r];
+                    if(b.status == 1) {
+                        if(x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
+                            dy = -dy;
+                            b.status = 0;
+                            score += 10;
+                            
+                            if(score === brickRowCount * brickColumnCount * 10) {
+                                alert("STAGE CLEAR!!");
+                                document.location.reload();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // スコア・ライフ描画
+        function drawScoreAndLives() {
+            ctx.font = "bold 14px sans-serif";
+            ctx.fillStyle = "#00f3ff";
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = "#00f3ff";
+            ctx.fillText("SCORE: " + score, 20, 25);
+            ctx.fillText("LIVES: " + lives, canvas.width - 85, 25);
+            ctx.shadowBlur = 0;
+        }
+
+        // 光るボール
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = "#ffffff";
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#00ffff";
+            ctx.fill();
+            ctx.closePath();
+            ctx.shadowBlur = 0;
+        }
+
+        // 光るパドル
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.roundRect(paddleX, canvas.height - paddleHeight - 15, paddleWidth, paddleHeight, 5);
+            ctx.fillStyle = "#00f3ff";
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#00f3ff";
+            ctx.fill();
+            ctx.closePath();
+            ctx.shadowBlur = 0;
+        }
+
+        // 光るブロック
+        function drawBricks() {
+            for(let c=0; c<brickColumnCount; c++) {
+                for(let r=0; r<brickRowCount; r++) {
+                    if(bricks[c][r].status == 1) {
+                        let brickX = (c*(brickWidth+brickPadding))+brickOffsetLeft;
+                        let brickY = (r*(brickHeight+brickPadding))+brickOffsetTop;
+                        bricks[c][r].x = brickX;
+                        bricks[c][r].y = brickY;
+                        
+                        ctx.beginPath();
+                        ctx.roundRect(brickX, brickY, brickWidth, brickHeight, 3);
+                        ctx.fillStyle = brickColors[r];
+                        ctx.shadowBlur = 8;
+                        ctx.shadowColor = brickColors[r];
+                        ctx.fill();
+                        ctx.closePath();
+                        ctx.shadowBlur = 0;
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBricks();
+            drawBall();
+            drawPaddle();
+            drawScoreAndLives();
+            collisionDetection();
+
+            // 壁との反射
+            if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+                dx = -dx;
+            }
+            if(y + dy < ballRadius) {
+                dy = -dy;
+            } else if(y + dy > canvas.height - ballRadius - 15) {
+                if(x > paddleX && x < paddleX + paddleWidth) {
+                    let hitPoint = x - (paddleX + paddleWidth / 2);
+                    dx = hitPoint * 0.15;
+                    dy = -dy;
+                } else {
+                    lives--;
+                    if(!lives) {
+                        alert("GAME OVER");
+                        document.location.reload();
+                    } else {
+                        x = canvas.width / 2;
+                        y = canvas.height - 40;
+                        dx = 3;
+                        dy = -3;
+                        paddleX = (canvas.width - paddleWidth) / 2;
+                    }
+                }
+            }
+
+            x += dx;
+            y += dy;
+            requestAnimationFrame(draw);
+        }
+
+        async function initializeLiff() {
+            try {
+                await liff.init({ liffId: "2011906336-C3QEsr65" });
+            } catch (error) {
+                console.log("LIFF Initialization failed", error);
+            }
+            // ここでゲームの描画を開始するように修正
+            draw();
+        }
+
+        initializeLiff();
+    </script>
+</body>
+</html>
